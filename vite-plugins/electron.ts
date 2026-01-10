@@ -64,5 +64,11 @@ export function electronDevPlugin() {
         })
       })
     },
+    async closeBundle() {
+      await build({
+        configFile: 'vite.config.electron.ts',
+        mode: 'production',
+      })
+    },
   } as PluginOption
 }
