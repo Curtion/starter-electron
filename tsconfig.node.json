@@ -4,14 +4,14 @@
     "target": "ES2023",
     "lib": ["ES2023"],
     "moduleDetection": "force",
+    "baseUrl": ".",
     "module": "ESNext",
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["src/main/*"]
+    },
     "types": ["node"],
     "allowImportingTsExtensions": true,
-
-    /* Linting */
     "strict": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,

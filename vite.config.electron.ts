@@ -19,4 +19,9 @@ export default defineConfig({
       external: ['electron', ...builtinModules],
     },
   },
+  resolve: {
+    alias: {
+      '@': '/src/main',
+    },
+  },
 })
