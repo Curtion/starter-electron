@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.7.3",
+    "@iconify/json": "^2.2.427",
     "@types/node": "^24.10.1",
     "@unocss/reset": "^66.5.12",
     "@vitejs/plugin-vue": "^6.0.1",
