@@ -1,21 +1,52 @@
 import type { ChildProcess } from 'node:child_process'
 import type { PluginOption } from 'vite'
 import { spawn } from 'node:child_process'
+import path from 'node:path'
 import process from 'node:process'
+import builtinModules from 'builtin-modules'
 import electron from 'electron'
 import { build } from 'vite'
+
+const dirname = process.cwd()
+
+async function buildElectronEntry(entry: 'main' | 'preload', mode: 'development' | 'production', watch = false) {
+  return build({
+    configFile: false,
+    publicDir: false,
+    build: {
+      lib: {
+        entry: path.resolve(dirname, `src/main/${entry}.ts`),
+        formats: ['cjs'],
+        fileName: () => `${entry}.cjs`,
+      },
+      outDir: 'dist-electron',
+      emptyOutDir: entry === 'main',
+      watch: watch ? {} : null,
+      rollupOptions: {
+        external: ['electron', ...builtinModules],
+      },
+    },
+    resolve: {
+      alias: {
+        '@': '/src/main',
+      },
+    },
+    mode,
+  })
+}
+
+async function buildElectron(mode: 'development' | 'production', watch = false) {
+  // 分别构建 main 和 preload，避免 rolldown 代码分割问题
+  // https://github.com/vitejs/rolldown-vite/issues/572
+  await buildElectronEntry('main', mode, watch)
+  return buildElectronEntry('preload', mode, watch)
+}
 
 export function electronDevPlugin() {
   return {
     name: 'electron-dev-start',
     async configureServer(server) {
-      const result = await build({
-        configFile: 'vite.config.electron.ts',
-        mode: 'development',
-        build: {
-          watch: {},
-        },
-      })
+      const result = await buildElectron('development', true)
 
       server.httpServer?.on('listening', () => {
         const address = server.httpServer?.address()
@@ -65,10 +96,7 @@ export function electronDevPlugin() {
       })
     },
     async closeBundle() {
-      await build({
-        configFile: 'vite.config.electron.ts',
-        mode: 'production',
-      })
+      await buildElectron('production', false)
     },
   } as PluginOption
 }
