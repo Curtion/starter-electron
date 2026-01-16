@@ -72,8 +72,9 @@ export function electronDevPlugin() {
             },
           )
 
-          electronProcess.on('close', () => {
-            server.close()
+          electronProcess.on('close', async () => {
+            await server.close()
+            process.exit(0)
           })
         }
 
