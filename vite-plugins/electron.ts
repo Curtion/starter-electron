@@ -22,7 +22,7 @@ async function buildElectronEntry(entry: 'main' | 'preload', mode: 'development'
       outDir: 'dist-electron',
       emptyOutDir: entry === 'main',
       watch: watch ? {} : null,
-      rollupOptions: {
+      rolldownOptions: {
         external: ['electron', ...builtinModules],
       },
     },
