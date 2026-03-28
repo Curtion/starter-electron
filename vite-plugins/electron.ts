@@ -38,8 +38,9 @@ async function buildElectronEntry(entry: 'main' | 'preload', mode: 'development'
 async function buildElectron(mode: 'development' | 'production', watch = false) {
   // 分别构建 main 和 preload，避免 rolldown 代码分割问题
   // https://github.com/vitejs/rolldown-vite/issues/572
-  await buildElectronEntry('main', mode, watch)
-  return buildElectronEntry('preload', mode, watch)
+  const mainResult = await buildElectronEntry('main', mode, watch)
+  const preloadResult = await buildElectronEntry('preload', mode, watch)
+  return [mainResult, preloadResult]
 }
 
 export function electronDevPlugin() {
@@ -62,7 +63,7 @@ export function electronDevPlugin() {
 
           electronProcess = spawn(
             electron as unknown as string,
-            ['dist-electron/main.cjs'],
+            ['dist-electron/main.cjs', '--remote-debugging-port=19222'],
             {
               stdio: 'inherit',
               env: {
@@ -80,12 +81,25 @@ export function electronDevPlugin() {
 
         startElectron()
 
-        if ('on' in result) {
-          result.on('event', (event) => {
-            if (event.code === 'BUNDLE_END') {
-              startElectron()
-            }
-          })
+        let restartTimer: ReturnType<typeof setTimeout> | null = null
+        const scheduleRestart = () => {
+          if (restartTimer) {
+            clearTimeout(restartTimer)
+          }
+          restartTimer = setTimeout(() => {
+            restartTimer = null
+            startElectron()
+          }, 100)
+        }
+
+        for (const watcher of result) {
+          if ('on' in watcher) {
+            watcher.on('event', (event) => {
+              if (event.code === 'BUNDLE_END') {
+                scheduleRestart()
+              }
+            })
+          }
         }
 
         server.httpServer?.on('close', () => {
