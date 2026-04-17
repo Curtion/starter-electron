@@ -71,6 +71,25 @@ export function electronDevPlugin() {
 
       const result = await buildElectron('development', true)
 
+      await Promise.all(
+        result.map(
+          watcher =>
+            new Promise<void>((resolve) => {
+              if ('on' in watcher) {
+                const handler = (event: { code: string }) => {
+                  if (event.code === 'BUNDLE_END') {
+                    watcher.off('event', handler)
+                    resolve()
+                  }
+                }
+                watcher.on('event', handler)
+              } else {
+                resolve()
+              }
+            }),
+        ),
+      )
+
       server.httpServer?.on('listening', () => {
         const address = server.httpServer?.address()
         const port = typeof address === 'string' ? address : address?.port
