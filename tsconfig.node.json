@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
     "lib": ["ES2023"],
     "moduleDetection": "force",
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": ["src/main/*"]
+      "@/*": ["./src/main/*"]
     },
     "types": ["node"],
     "allowImportingTsExtensions": true,
