@@ -3,33 +3,42 @@ import type { PluginOption } from 'vite'
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import process from 'node:process'
-import builtinModules from 'builtin-modules'
 import electron from 'electron'
 import { build } from 'vite'
 
 const dirname = process.cwd()
 
+const electronExternals = [
+  'electron',
+]
+
 async function buildElectronEntry(entry: 'main' | 'preload', mode: 'development' | 'production', watch = false) {
+  const entryFile = path.resolve(dirname, `src/main/${entry}.ts`)
+
   return build({
     configFile: false,
     publicDir: false,
     build: {
-      lib: {
-        entry: path.resolve(dirname, `src/main/${entry}.ts`),
-        formats: ['cjs'],
-        fileName: () => `${entry}.cjs`,
-      },
+      ssr: entryFile,
       outDir: 'dist-electron',
-      emptyOutDir: entry === 'main',
+      emptyOutDir: false,
       watch: watch ? {} : null,
       rolldownOptions: {
-        external: ['electron', ...builtinModules],
+        external: electronExternals,
+        output: {
+          entryFileNames: `${entry}.cjs`,
+          format: 'cjs',
+        },
       },
     },
     resolve: {
       alias: {
         '@': '/src/main',
       },
+    },
+    ssr: {
+      noExternal: [],
+      target: 'node',
     },
     mode,
   })
@@ -38,6 +47,13 @@ async function buildElectronEntry(entry: 'main' | 'preload', mode: 'development'
 async function buildElectron(mode: 'development' | 'production', watch = false) {
   // 分别构建 main 和 preload，避免 rolldown 代码分割问题
   // https://github.com/vitejs/rolldown-vite/issues/572
+  if (!watch) {
+    const fs = await import('node:fs')
+    const outDir = path.resolve(dirname, 'dist-electron')
+    if (fs.existsSync(outDir)) {
+      fs.rmSync(outDir, { recursive: true, force: true })
+    }
+  }
   const mainResult = await buildElectronEntry('main', mode, watch)
   const preloadResult = await buildElectronEntry('preload', mode, watch)
   return [mainResult, preloadResult]
@@ -47,6 +63,12 @@ export function electronDevPlugin() {
   return {
     name: 'electron-dev-start',
     async configureServer(server) {
+      const fs = await import('node:fs')
+      const outDir = path.resolve(dirname, 'dist-electron')
+      if (fs.existsSync(outDir)) {
+        fs.rmSync(outDir, { recursive: true, force: true })
+      }
+
       const result = await buildElectron('development', true)
 
       server.httpServer?.on('listening', () => {
