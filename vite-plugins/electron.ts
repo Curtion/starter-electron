@@ -14,6 +14,7 @@ const electronExternals = [
 
 async function buildElectronEntry(entry: 'main' | 'preload', mode: 'development' | 'production', watch = false) {
   const entryFile = path.resolve(dirname, `src/main/${entry}.ts`)
+  const isMain = entry === 'main'
 
   return build({
     configFile: false,
@@ -26,8 +27,8 @@ async function buildElectronEntry(entry: 'main' | 'preload', mode: 'development'
       rolldownOptions: {
         external: electronExternals,
         output: {
-          entryFileNames: `${entry}.cjs`,
-          format: 'cjs',
+          entryFileNames: isMain ? 'main.mjs' : 'preload.cjs',
+          format: isMain ? 'es' : 'cjs',
         },
       },
     },
@@ -104,7 +105,7 @@ export function electronDevPlugin() {
 
           electronProcess = spawn(
             electron as unknown as string,
-            ['dist-electron/main.cjs', '--remote-debugging-port=19222'],
+            ['dist-electron/main.mjs', '--remote-debugging-port=19222'],
             {
               stdio: 'inherit',
               env: {

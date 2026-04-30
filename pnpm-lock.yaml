@@ -26,9 +26,6 @@ importers:
       '@vue/tsconfig':
         specifier: ^0.9.1
         version: 0.9.1(typescript@6.0.2)(vue@3.5.32(typescript@6.0.2))
-      builtin-modules:
-        specifier: ^5.0.0
-        version: 5.0.0
       electron:
         specifier: ^41.1.1
         version: 41.1.1
